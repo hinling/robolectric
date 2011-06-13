@@ -204,11 +204,12 @@ public class ResourceLoader {
     private String getAndroidResourcePathByExecingWhichAndroid() {
         // Hand tested
         // Should always work from the command line. Often fails in IDEs because they don't pass the full PATH in the environment
+        // TODO: this only works for the *nix system. let's make it work for windows also.
         try {
-            Process process = Runtime.getRuntime().exec(new String[]{"which", "android"});
-            String sdkPath = new BufferedReader(new InputStreamReader(process.getInputStream())).readLine();
-            if (sdkPath != null && sdkPath.endsWith("tools/android")) {
-                return getResourcePathFromSdkPath(sdkPath.substring(0, sdkPath.indexOf("tools/android")));
+            if (isWindows()) {
+                return deriveSdkPath("android.bat");
+            } else {
+                return deriveSdkPath("android");
             }
         } catch (IOException e) {
             // fine we'll try something else
@@ -216,7 +217,27 @@ public class ResourceLoader {
         return null;
     }
 
+    private String deriveSdkPath(String android) throws IOException {
+        String skdPath = null;
+        Process process = Runtime.getRuntime().exec(new String[]{"which", android});
+        String sdkPath = new BufferedReader(new InputStreamReader(process.getInputStream())).readLine();
+        if (sdkPath != null && sdkPath.endsWith("tools/" + android)) {
+            sdkPath = getResourcePathFromSdkPath(sdkPath.substring(0, sdkPath.indexOf("tools/" + android)));
+        }
+        return sdkPath;
+    }
+
+    private boolean isWindows() {
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            return true;
+        }
+        return false;
+    }
+
     private String getResourcePathFromSdkPath(String sdkPath) {
+        if (sdkPath.contains("cygdrive")) {
+            sdkPath = sdkPath.replace("/cygdrive/c", "c:");
+        }
         File androidResourcePath = new File(sdkPath, getAndroidResourceSubPath());
         return androidResourcePath.exists() ? androidResourcePath.toString() : null;
     }

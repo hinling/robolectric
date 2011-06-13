@@ -62,8 +62,9 @@ public class MenuLoader extends XmlLoader {
         if (!name.startsWith("#")) {
             MenuNode menuNode = new MenuNode(name, attrMap);
             parent.addChild(menuNode);
-            if (node.getChildNodes().getLength() != 0)
-                throw new RuntimeException(node.getChildNodes().toString());
+            if (node.getChildNodes().getLength() != 0) {
+                processChildren(node.getChildNodes(), menuNode);  // add this so it will handle  <menu> <item> <menu> <item></item></menu></item></menu>
+            }
         }
     }
 
